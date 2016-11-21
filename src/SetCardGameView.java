@@ -93,9 +93,9 @@ public class SetCardGameView extends JFrame {
     }
 
     public void init() {
-        hintBox = new ArrayList<JLabel>();
-        selectBox = new ArrayList<JLabel>();
-        select = new ArrayList<SetCard>();
+        hintBox = new ArrayList<>();
+        selectBox = new ArrayList<>();
+        select = new ArrayList<>();
         game = new SetCardGameModel();
         buttonPosX = 32;
         buttonPosY = 20;
@@ -217,7 +217,7 @@ public class SetCardGameView extends JFrame {
                     frame.repaint();
                 }
                 if(game.wasFound(select)) {
-                    select = new ArrayList<SetCard>();
+                    select = new ArrayList<>();
                     JOptionPane.showMessageDialog(null, "You already found this set...");
                 }
                 else if(game.isSet(select)) {
@@ -225,7 +225,7 @@ public class SetCardGameView extends JFrame {
                     found.setText("Sets Found: " + setsFound);
                     timeLeft += SET_BONUS_TIME;
                     game.updateSetsFound(select);
-                    select = new ArrayList<SetCard>();
+                    select = new ArrayList<>();
                     JOptionPane.showMessageDialog(null, "It's a set!");
                     setsExisting--;
                     hint.setEnabled(true);
@@ -237,7 +237,7 @@ public class SetCardGameView extends JFrame {
                     }
                 }
                 else {
-                    select = new ArrayList<SetCard>();
+                    select = new ArrayList<>();
                     JOptionPane.showMessageDialog(null, "Not a set...");
                 }
                 checkSet.setEnabled(false);
@@ -266,9 +266,7 @@ public class SetCardGameView extends JFrame {
     }
 
     public void newGame() {
-        newGame.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        newGame.addActionListener(e -> {
                 if(JOptionPane.showConfirmDialog(null, "Are you sure you want to start a new game?", "Restart", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                     if(getContentPane().equals(gameOver)) {
                         setContentPane(frame);
@@ -276,7 +274,7 @@ public class SetCardGameView extends JFrame {
                     restart();
                 }
             }
-        });
+        );
     }
 
     public void loadCards() {
@@ -306,10 +304,8 @@ public class SetCardGameView extends JFrame {
                 selected.setVisible(false);
                 hintBox.add(hinted);
                 selectBox.add(selected);
-                tempButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        int cardIndex = Arrays.asList(cards1).indexOf(e.getSource());
+                tempButton.addActionListener(e -> {
+                        int cardIndex = Arrays.asList(cards1).indexOf(tempButton);
                         if (!select.contains(game.getBoard().get(cardIndex))) {
                             select.add(game.getBoard().get(cardIndex));
                             hinted.setVisible(false);
@@ -329,7 +325,7 @@ public class SetCardGameView extends JFrame {
                             checkSet.setEnabled(false);
                         }
                     }
-                });
+                );
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -365,6 +361,7 @@ public class SetCardGameView extends JFrame {
     public void restart() {
         timeLeft = SET_TIME;
         setsFound = 0;
+        found.setText("Sets Found: " + setsFound);
         frame.setLayout(null);
         newBoard();
         timer.start();
@@ -372,9 +369,9 @@ public class SetCardGameView extends JFrame {
 
     public void newBoard() {
         cards1 = new JButton[game.getBoard().size()];
-        selectBox = new ArrayList<JLabel>();
-        hintBox = new ArrayList<JLabel>();
-        select = new ArrayList<SetCard>();
+        selectBox = new ArrayList<>();
+        hintBox = new ArrayList<>();
+        select = new ArrayList<>();
         buttonPosX = 32;
         buttonPosY = 20;
         hint.setEnabled(true);

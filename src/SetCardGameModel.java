@@ -43,9 +43,9 @@ public class SetCardGameModel {
 
     public void init() {
         isSet = false;
-        board = new ArrayList<SetCard>();
-        setsFound = new ArrayList<ArrayList<SetCard>>();
-        possibleSets = new ArrayList<ArrayList<SetCard>>();
+        board = new ArrayList<>();
+        setsFound = new ArrayList<>();
+        possibleSets = new ArrayList<>();
         count = 0;
     }
     
@@ -57,7 +57,7 @@ public class SetCardGameModel {
     }
 
     public void makeNumberList() {
-        randomList = new ArrayList<Integer>();
+        randomList = new ArrayList<>();
         for(int i = 0; i < DECK_SIZE; i++) {
             randomList.add(i);
         }
@@ -230,10 +230,10 @@ public class SetCardGameModel {
 
     public void reset() {
         isSet = false;
-        randomList = new ArrayList<Integer>();
-        board = new ArrayList<SetCard>();
-        setsFound = new ArrayList<ArrayList<SetCard>>();
-        possibleSets = new ArrayList<ArrayList<SetCard>>();
+        randomList = new ArrayList<>();
+        board = new ArrayList<>();
+        setsFound = new ArrayList<>();
+        possibleSets = new ArrayList<>();
         count = 0;
         makeNumberList();
         setBoard();

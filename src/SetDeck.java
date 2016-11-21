@@ -14,7 +14,7 @@ public class SetDeck {
     }
 
     public void init() {
-        deck = new ArrayList<SetCard>();
+        deck = new ArrayList<>();
     }
 
     public ArrayList<SetCard> getDeck() {
