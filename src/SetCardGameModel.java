@@ -1,4 +1,4 @@
-import java.io.*;
+import java.net.URL;
 import java.util.*;
 import java.lang.*;
 import java.lang.Math;
@@ -13,6 +13,7 @@ public class SetCardGameModel {
     private ArrayList<SetCard> board;
     private ArrayList<ArrayList<SetCard>> setsFound;
     private ArrayList<ArrayList<SetCard>> possibleSets;
+    private ArrayList<URL> fileNames;
     private int count;
 
     final static int DECK_SIZE = 81;
@@ -28,16 +29,16 @@ public class SetCardGameModel {
     final static String SHADE_IMAGE_OPEN = "O";
     final static String SHADE_IMAGE_SOLID = "S";
     final static String SHADE_IMAGE_STRIPED = "St";
-    final static String SHAPE_IMAGE_DIAMOND = "D.png\n";
-    final static String SHAPE_IMAGE_OVAL = "O.png\n";
-    final static String SHAPE_IMAGE_SQUIGGLE = "S.png\n";
+    final static String SHAPE_IMAGE_DIAMOND = "D.png";
+    final static String SHAPE_IMAGE_OVAL = "O.png";
+    final static String SHAPE_IMAGE_SQUIGGLE = "S.png";
 
 
     public SetCardGameModel() {
         init();
         makeNumberList();
         setBoard();
-        writeFile();
+        createFileNames();
         boardHasSet();
     }
 
@@ -54,6 +55,9 @@ public class SetCardGameModel {
     }
     public int getCount() {
         return count;
+    }
+    public ArrayList<URL> getFileNames() {
+        return fileNames;
     }
 
     public void makeNumberList() {
@@ -142,7 +146,7 @@ public class SetCardGameModel {
         for(int i = 0; i < BOARD_SIZE; i++) {
             for(int j = i + 1; j < BOARD_SIZE; j++) {
                 for(int k = j + 1; k < BOARD_SIZE; k++) {
-                    ArrayList<SetCard> test = new ArrayList<SetCard>();
+                    ArrayList<SetCard> test = new ArrayList<>();
                     test.add(board.get(i));
                     test.add(board.get(j));
                     test.add(board.get(k));
@@ -157,56 +161,50 @@ public class SetCardGameModel {
         return hasSet;
     }
 
-    public void writeFile() {
-        try {
-            File file = new File("cardNames.tmp");
-            if(file.exists())
-                file.delete();
-            FileWriter fw = new FileWriter(file.getAbsoluteFile());
-            BufferedWriter writeCards = new BufferedWriter(fw);
-            SetCard tempCard;
-            for(int i = 0; i < board.size(); i++) {
-                tempCard = board.get(i);
-                if(tempCard.getNumber() == SetCard.Number.ONE) {
-                    writeCards.write(NUM_IMAGE_ONE);
-                }
-                else if(tempCard.getNumber() == SetCard.Number.TWO) {
-                    writeCards.write(NUM_IMAGE_TWO);
-                }
-                else {
-                    writeCards.write(NUM_IMAGE_THREE);
-                }
-                if(tempCard.getColor() == SetCard.Color.GREEN) {
-                    writeCards.write(COL_IMAGE_GREEN);
-                }
-                else if(tempCard.getColor() == SetCard.Color.PURPLE) {
-                    writeCards.write(COL_IMAGE_PURPLE);
-                }
-                else {
-                    writeCards.write(COL_IMAGE_RED);
-                }
-                if(tempCard.getShade() == SetCard.Shade.OPEN) {
-                    writeCards.write(SHADE_IMAGE_OPEN);
-                }
-                else if(tempCard.getShade() == SetCard.Shade.SOLID) {
-                    writeCards.write(SHADE_IMAGE_SOLID);
-                }
-                else {
-                    writeCards.write(SHADE_IMAGE_STRIPED);
-                }
-                if(tempCard.getShape() == SetCard.Shape.DIAMOND) {
-                    writeCards.write(SHAPE_IMAGE_DIAMOND);
-                }
-                else if(tempCard.getShape() == SetCard.Shape.OVAL) {
-                    writeCards.write(SHAPE_IMAGE_OVAL);
-                }
-                else {
-                    writeCards.write(SHAPE_IMAGE_SQUIGGLE);
-                }
+    public void createFileNames() {
+        SetCard tempCard;
+        String tempFileName;
+        fileNames = new ArrayList<>();
+        for(int i = 0; i < board.size(); i++) {
+            tempCard = board.get(i);
+            tempFileName = "";
+            if(tempCard.getNumber() == SetCard.Number.ONE) {
+                tempFileName += NUM_IMAGE_ONE;
             }
-            writeCards.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            else if(tempCard.getNumber() == SetCard.Number.TWO) {
+                tempFileName += NUM_IMAGE_TWO;
+            }
+            else {
+                tempFileName += NUM_IMAGE_THREE;
+            }
+            if(tempCard.getColor() == SetCard.Color.GREEN) {
+                tempFileName += COL_IMAGE_GREEN;
+            }
+            else if(tempCard.getColor() == SetCard.Color.PURPLE) {
+                tempFileName += COL_IMAGE_PURPLE;
+            }
+            else {
+                tempFileName += COL_IMAGE_RED;
+            }
+            if(tempCard.getShade() == SetCard.Shade.OPEN) {
+                tempFileName += SHADE_IMAGE_OPEN;
+            }
+            else if(tempCard.getShade() == SetCard.Shade.SOLID) {
+                tempFileName += SHADE_IMAGE_SOLID;
+            }
+            else {
+                tempFileName += SHADE_IMAGE_STRIPED;
+            }
+            if(tempCard.getShape() == SetCard.Shape.DIAMOND) {
+                tempFileName += SHAPE_IMAGE_DIAMOND;
+            }
+            else if(tempCard.getShape() == SetCard.Shape.OVAL) {
+                tempFileName += SHAPE_IMAGE_OVAL;
+            }
+            else {
+                tempFileName += SHAPE_IMAGE_SQUIGGLE;
+            }
+            fileNames.add(SetCardGameModel.class.getResource(tempFileName));
         }
     }
     public void updateSetsFound(ArrayList<SetCard> currentSet) {
@@ -237,7 +235,7 @@ public class SetCardGameModel {
         count = 0;
         makeNumberList();
         setBoard();
-        writeFile();
+        createFileNames();
         boardHasSet();
     }
 }

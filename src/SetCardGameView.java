@@ -1,13 +1,9 @@
 import javax.swing.*;
-import javax.swing.Timer;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.lang.Math;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * The Application View.
@@ -26,7 +22,6 @@ public class SetCardGameView extends JFrame {
     private JButton newGame;
     private JButton help;
     private JButton hint;
-    private File cardNames;
     private JPanel frame;
     private int setsExisting;
     private JLabel time;
@@ -47,8 +42,8 @@ public class SetCardGameView extends JFrame {
     private JLabel gamePaused;
 
     final static int NO_SETS_ON_BOARD = 0;
-    final static int SET_BONUS_TIME = 10000;
-    final static int SET_HINT_PENALTY = 5000;
+    final static int SET_BONUS_TIME = 5000;
+    final static int SET_HINT_PENALTY = 10000;
     final static int SET_SIZE = 3;
     final static int SET_TIME = 300000;
     final static int TIME_DECREMENT = 100;
@@ -81,8 +76,6 @@ public class SetCardGameView extends JFrame {
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
                 int x = JOptionPane.showConfirmDialog(null, "Are you sure you want to close the window?", "Really Closing?", JOptionPane.YES_NO_OPTION);
                 if(x == JOptionPane.YES_OPTION) {
-                    File cardNames = new File("cardNames.tmp");
-                    cardNames.delete();
                     System.exit(0);
                 }
                 if(x == JOptionPane.NO_OPTION || x == JOptionPane.CLOSED_OPTION) {
@@ -105,7 +98,6 @@ public class SetCardGameView extends JFrame {
         newGame = new JButton("New Game");
         help = new JButton("Help");
         hint = new JButton("Hint");
-        cardNames = new File("cardNames.tmp");
         frame = new JPanel();
         setsExisting = game.getCount();
         time = new JLabel();
@@ -167,13 +159,11 @@ public class SetCardGameView extends JFrame {
     }
 
     public void startButton() {
-        start.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        start.addActionListener(e -> {
                 setContentPane(frame);
                 setLayout(null);
                 if(setsExisting == NO_SETS_ON_BOARD) {
-                    restart();
+                    newBoard();
                 }
                 loadCards();
                 loadButtonsInFrame();
@@ -181,13 +171,11 @@ public class SetCardGameView extends JFrame {
                 repaint();
                 timer.start();
             }
-        });
+        );
     }
 
     public void help() {
-        help.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        help.addActionListener(e -> {
                 if(getContentPane().equals(mainMenu)) {
                     helpDialog();
                 }
@@ -204,13 +192,11 @@ public class SetCardGameView extends JFrame {
                     timer.start();
                 }
             }
-        });
+        );
     }
 
     public void checkSet() {
-        checkSet.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        checkSet.addActionListener(e -> {
                 for(int i = 0; i < selectBox.size(); i++) {
                     selectBox.get(i).setVisible(false);
                     frame.revalidate();
@@ -242,13 +228,11 @@ public class SetCardGameView extends JFrame {
                 }
                 checkSet.setEnabled(false);
             }
-        });
+        );
     }
 
     public void hint() {
-        hint.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) throws IndexOutOfBoundsException {
+        hint.addActionListener(e -> {
                 timeLeft -= SET_HINT_PENALTY;
                 int rand = (int) (Math.random() * SET_SIZE);
                 boolean cardNotFound = false;
@@ -262,7 +246,7 @@ public class SetCardGameView extends JFrame {
                     i++;
                 }
             }
-        });
+        );
     }
 
     public void newGame() {
@@ -278,57 +262,52 @@ public class SetCardGameView extends JFrame {
     }
 
     public void loadCards() {
-        try {
-            Scanner cards = new Scanner(cardNames);
-            for(int i = 0; i < game.getBoard().size(); i++) {
-                cards1[i] = new JButton(new ImageIcon(cards.nextLine()));
+        for(int i = 0; i < game.getBoard().size(); i++) {
+            cards1[i] = new JButton(new ImageIcon(game.getFileNames().get(i)));
+        }
+        for(JButton tempButton : cards1) {
+            if (buttonPosX > 544) {
+                buttonPosX = 32;
+                buttonPosY += 167;
             }
-            for(JButton tempButton : cards1) {
-                if (buttonPosX > 544) {
-                    buttonPosX = 32;
-                    buttonPosY += 167;
-                }
-                if (buttonPosX <= 544 && buttonPosY <= 682) {
-                    tempButton.setBounds(buttonPosX, buttonPosY, 224, 135);
-                    tempButton.setBackground(Color.white);
-                    frame.add(tempButton);
-                }
-                buttonPosX += 256;
-                JLabel selected = new JLabel(new ImageIcon("images/highlight.png"));
-                JLabel hinted = new JLabel(new ImageIcon("images/hinted.png"));
-                hinted.setBounds(tempButton.getX() - 5, tempButton.getY() - 5, 234, 145);
-                selected.setBounds(tempButton.getX() - 5, tempButton.getY() - 5, 234, 145);
-                frame.add(hinted);
-                frame.add(selected);
-                hinted.setVisible(false);
-                selected.setVisible(false);
-                hintBox.add(hinted);
-                selectBox.add(selected);
-                tempButton.addActionListener(e -> {
-                        int cardIndex = Arrays.asList(cards1).indexOf(tempButton);
-                        if (!select.contains(game.getBoard().get(cardIndex))) {
-                            select.add(game.getBoard().get(cardIndex));
-                            hinted.setVisible(false);
-                            selected.setVisible(true);
-                            frame.revalidate();
-                            frame.repaint();
-                        } else {
-                            selected.setVisible(false);
-                            select.remove(game.getBoard().get(cardIndex));
-                            frame.revalidate();
-                            frame.repaint();
-                        }
-                        if (select.size() == SET_SIZE) {
-                            checkSet.setEnabled(true);
-                        }
-                        if (select.size() != SET_SIZE) {
-                            checkSet.setEnabled(false);
-                        }
+            if (buttonPosX <= 544 && buttonPosY <= 682) {
+                tempButton.setBounds(buttonPosX, buttonPosY, 224, 135);
+                tempButton.setBackground(Color.white);
+                frame.add(tempButton);
+            }
+            buttonPosX += 256;
+            JLabel selected = new JLabel(new ImageIcon(SetCardGameView.class.getResource("images/highlight.png")));
+            JLabel hinted = new JLabel(new ImageIcon(SetCardGameView.class.getResource("images/hinted.png")));
+            hinted.setBounds(tempButton.getX() - 5, tempButton.getY() - 5, 234, 145);
+            selected.setBounds(tempButton.getX() - 5, tempButton.getY() - 5, 234, 145);
+            frame.add(hinted);
+            frame.add(selected);
+            hinted.setVisible(false);
+            selected.setVisible(false);
+            hintBox.add(hinted);
+            selectBox.add(selected);
+            tempButton.addActionListener(e -> {
+                    int cardIndex = Arrays.asList(cards1).indexOf(tempButton);
+                    if (!select.contains(game.getBoard().get(cardIndex))) {
+                        select.add(game.getBoard().get(cardIndex));
+                        hinted.setVisible(false);
+                        selected.setVisible(true);
+                        frame.revalidate();
+                        frame.repaint();
+                    } else {
+                        selected.setVisible(false);
+                        select.remove(game.getBoard().get(cardIndex));
+                        frame.revalidate();
+                        frame.repaint();
                     }
-                );
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+                    if (select.size() == SET_SIZE) {
+                        checkSet.setEnabled(true);
+                    }
+                    if (select.size() != SET_SIZE) {
+                        checkSet.setEnabled(false);
+                    }
+                }
+            );
         }
     }
 
@@ -368,30 +347,28 @@ public class SetCardGameView extends JFrame {
     }
 
     public void newBoard() {
-        cards1 = new JButton[game.getBoard().size()];
-        selectBox = new ArrayList<>();
-        hintBox = new ArrayList<>();
-        select = new ArrayList<>();
-        buttonPosX = 32;
-        buttonPosY = 20;
-        hint.setEnabled(true);
-        frame.removeAll();
-        game.reset();
-        setsExisting = game.getCount();
-        if(setsExisting == NO_SETS_ON_BOARD) {
-            restart();
+        do {
+            cards1 = new JButton[game.getBoard().size()];
+            selectBox = new ArrayList<>();
+            hintBox = new ArrayList<>();
+            select = new ArrayList<>();
+            buttonPosX = 32;
+            buttonPosY = 20;
+            hint.setEnabled(true);
+            frame.removeAll();
+            game.reset();
+            setsExisting = game.getCount();
+            loadCards();
+            loadButtonsInFrame();
+            setCount.setText("Number of sets left: " + game.getCount());
+            revalidate();
+            repaint();
         }
-        loadCards();
-        loadButtonsInFrame();
-        setCount.setText("Number of sets left: " + game.getCount());
-        revalidate();
-        repaint();
+        while(setsExisting == NO_SETS_ON_BOARD);
     }
 
     public void initTimer() {
-        countDown = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        countDown = e -> {
                 timeLeft -= TIME_DECREMENT;
                 SimpleDateFormat df = new SimpleDateFormat("mm:ss");
                 time.setText(df.format(timeLeft));
@@ -429,6 +406,6 @@ public class SetCardGameView extends JFrame {
                     gameOver.revalidate();
                 }
             }
-        };
+        ;
     }
 }
