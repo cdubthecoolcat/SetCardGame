@@ -1,5 +1,6 @@
 /**
  * for testing
+ *
  * @author Connor Wong
  */
 
@@ -24,7 +25,7 @@ public class Test {
         System.out.println(d.getDeck().size());*/
         SetCardGameModel test = new SetCardGameModel();
         System.out.println(test.getBoard());
-        System.out.println(test.boardHasSet());
+        //System.out.println(test.findPossibleSets());
         System.out.println(test.getCount());
     }
 }

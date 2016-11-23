@@ -1,52 +1,41 @@
+import javax.sound.sampled.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
  * The Application View.
+ *
  * @author Connor Wong
  */
 public class SetCardGameView extends JFrame {
-    private ArrayList<JLabel> hintBox;
-    private ArrayList<JLabel> selectBox;
+    private ArrayList<JLabel> hintBoxes, selectBoxes, isSetBorderBoxes, isNotSetBorderBoxes;
     private ArrayList<SetCard> select;
     private SetCardGameModel game;
-    private int buttonPosX;
-    private int buttonPosY;
-    private JButton[] cards1;
-    private JLabel setCount;
-    private JButton checkSet;
-    private JButton newGame;
-    private JButton help;
-    private JButton hint;
-    private JPanel frame;
-    private int setsExisting;
-    private JLabel time;
-    private double timeLeft;
-    private int setsFound;
-    private JLabel found;
-    private JPanel mainMenu;
-    private JButton start;
-    private JLabel title;
-    private JPanel gameOver;
-    private JLabel gOver;
-    private JLabel yourScore;
-    private JPanel pause;
-    private int yourScorePosX;
-    private int yourScoreSizeX;
-    private Timer timer;
-    private ActionListener countDown;
-    private JLabel gamePaused;
+    private int buttonPosX, buttonPosY, setsExisting, setsFound, yourScorePosX, yourScorePosY;
+    private JButton[] boardCards;
+    private JLabel setCount, time, found, title, gOver, yourScore, gamePaused;
+    private JButton checkSet, newGame, help, hint, start;
+    private JPanel frame, mainMenu, gameOver, pause;
+    private double timeLeft, borderTimeLeft;
+    private Timer timer, borderTimer;
+    private ActionListener countDown, showBorder;
+    private AudioInputStream audioStream;
+    private Clip foundClip, errorClip;
 
     final static int NO_SETS_ON_BOARD = 0;
     final static int SET_BONUS_TIME = 5000;
     final static int SET_HINT_PENALTY = 10000;
     final static int SET_SIZE = 3;
     final static int SET_TIME = 300000;
+    final static int BORDER_TIME = 500;
     final static int TIME_DECREMENT = 100;
+    final static String IS_SET_SOUND = "sounds/ding.wav";
+    final static String NOT_SET_SOUND = "sounds/error.wav";
 
     public SetCardGameView() {
         initTimer();
@@ -75,10 +64,10 @@ public class SetCardGameView extends JFrame {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
                 int x = JOptionPane.showConfirmDialog(null, "Are you sure you want to close the window?", "Really Closing?", JOptionPane.YES_NO_OPTION);
-                if(x == JOptionPane.YES_OPTION) {
+                if (x == JOptionPane.YES_OPTION) {
                     System.exit(0);
                 }
-                if(x == JOptionPane.NO_OPTION || x == JOptionPane.CLOSED_OPTION) {
+                if (x == JOptionPane.NO_OPTION || x == JOptionPane.CLOSED_OPTION) {
                     setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
                 }
             }
@@ -86,13 +75,15 @@ public class SetCardGameView extends JFrame {
     }
 
     public void init() {
-        hintBox = new ArrayList<>();
-        selectBox = new ArrayList<>();
+        hintBoxes = new ArrayList<>();
+        selectBoxes = new ArrayList<>();
+        isSetBorderBoxes = new ArrayList<>();
+        isNotSetBorderBoxes = new ArrayList<>();
         select = new ArrayList<>();
         game = new SetCardGameModel();
         buttonPosX = 32;
         buttonPosY = 20;
-        cards1 = new JButton[game.getBoard().size()];
+        boardCards = new JButton[game.getBoard().size()];
         setCount = new JLabel();
         checkSet = new JButton("SET!");
         newGame = new JButton("New Game");
@@ -102,6 +93,7 @@ public class SetCardGameView extends JFrame {
         setsExisting = game.getCount();
         time = new JLabel();
         timeLeft = SET_TIME;
+        borderTimeLeft = BORDER_TIME;
         setsFound = 0;
         found = new JLabel("Sets Found: " + setsFound);
         mainMenu = new JPanel();
@@ -112,7 +104,7 @@ public class SetCardGameView extends JFrame {
         yourScore = new JLabel();
         pause = new JPanel();
         yourScorePosX = 0;
-        yourScoreSizeX = 0;
+        yourScorePosY = 0;
         gamePaused = new JLabel("PAUSED");
     }
 
@@ -160,112 +152,133 @@ public class SetCardGameView extends JFrame {
 
     public void startButton() {
         start.addActionListener(e -> {
-                setContentPane(frame);
-                setLayout(null);
-                if(setsExisting == NO_SETS_ON_BOARD) {
-                    newBoard();
+                    setContentPane(frame);
+                    setLayout(null);
+                    if (!game.boardHasSets()) {
+                        newBoard();
+                    }
+                    loadCards();
+                    loadButtonsInFrame();
+                    revalidate();
+                    repaint();
+                    timer.start();
                 }
-                loadCards();
-                loadButtonsInFrame();
-                revalidate();
-                repaint();
-                timer.start();
-            }
         );
     }
 
     public void help() {
         help.addActionListener(e -> {
-                if(getContentPane().equals(mainMenu)) {
-                    helpDialog();
+                    if (getContentPane().equals(mainMenu)) {
+                        helpDialog();
+                    }
+                    if (getContentPane().equals(frame)) {
+                        timer.stop();
+                        loadPaused();
+                        pause.setLayout(null);
+                        setContentPane(pause);
+                        repaint();
+                        revalidate();
+                        helpDialog();
+                        repaint();
+                        revalidate();
+                        timer.start();
+                    }
                 }
-                if(getContentPane().equals(frame)) {
-                    timer.stop();
-                    loadPaused();
-                    pause.setLayout(null);
-                    setContentPane(pause);
-                    repaint();
-                    revalidate();
-                    helpDialog();
-                    repaint();
-                    revalidate();
-                    timer.start();
-                }
-            }
         );
     }
 
     public void checkSet() {
         checkSet.addActionListener(e -> {
-                for(int i = 0; i < selectBox.size(); i++) {
-                    selectBox.get(i).setVisible(false);
-                    frame.revalidate();
-                    frame.repaint();
-                }
-                if(game.wasFound(select)) {
-                    select = new ArrayList<>();
-                    JOptionPane.showMessageDialog(null, "You already found this set...");
-                }
-                else if(game.isSet(select)) {
-                    setsFound++;
-                    found.setText("Sets Found: " + setsFound);
-                    timeLeft += SET_BONUS_TIME;
-                    game.updateSetsFound(select);
-                    select = new ArrayList<>();
-                    JOptionPane.showMessageDialog(null, "It's a set!");
-                    setsExisting--;
-                    hint.setEnabled(true);
-                    setCount.setText("Number of sets left: " + setsExisting);
-                    frame.repaint();
-                    frame.revalidate();
-                    if(setsExisting == NO_SETS_ON_BOARD) {
-                        newBoard();
+                    try {
+                        audioStream = AudioSystem.getAudioInputStream(SetCardGameView.class.getResource(IS_SET_SOUND));
+                        foundClip = AudioSystem.getClip();
+                        foundClip.open(audioStream);
+
+                        audioStream = AudioSystem.getAudioInputStream(SetCardGameView.class.getResource(NOT_SET_SOUND));
+                        errorClip = AudioSystem.getClip();
+                        errorClip.open(audioStream);
+                    } catch (LineUnavailableException | UnsupportedAudioFileException | IOException error) {
+                        System.out.println("Could not open file");
                     }
+                    for (int i = 0; i < selectBoxes.size(); i++) {
+                        selectBoxes.get(i).setVisible(false);
+                        frame.revalidate();
+                        frame.repaint();
+                    }
+                    if (game.wasFound(select)) {
+                        select = new ArrayList<>();
+                        JOptionPane.showMessageDialog(null, "You already found this set...");
+                    } else if (game.isSet(select)) {
+                        foundClip.start();
+                        setsFound++;
+                        found.setText("Sets Found: " + setsFound);
+                        timeLeft += SET_BONUS_TIME;
+                        game.updateSetsFound(select);
+                        for (int j = 0; j < select.size(); j++) {
+                            isSetBorderBoxes.get(game.getBoard().indexOf(select.get(j))).setVisible(true);
+                        }
+                        select = new ArrayList<>();
+                        //JOptionPane.showMessageDialog(null, "It's a set!");
+                        setsExisting--;
+                        hint.setEnabled(true);
+                        setCount.setText("Number of sets left: " + setsExisting);
+                        frame.repaint();
+                        frame.revalidate();
+                        borderTimer = new Timer(TIME_DECREMENT, initBorderTimer(isSetBorderBoxes));
+                        borderTimer.start();
+                        if (setsExisting == NO_SETS_ON_BOARD) {
+                            newBoard();
+                        }
+                    } else {
+                        errorClip.start();
+                        for (int k = 0; k < select.size(); k++) {
+                            isNotSetBorderBoxes.get(game.getBoard().indexOf(select.get(k))).setVisible(true);
+                        }
+                        select = new ArrayList<>();
+                        borderTimer = new Timer(TIME_DECREMENT, initBorderTimer(isNotSetBorderBoxes));
+                        borderTimer.start();
+                        //JOptionPane.showMessageDialog(null, "Not a set...");
+                    }
+                    checkSet.setEnabled(false);
                 }
-                else {
-                    select = new ArrayList<>();
-                    JOptionPane.showMessageDialog(null, "Not a set...");
-                }
-                checkSet.setEnabled(false);
-            }
         );
     }
 
     public void hint() {
         hint.addActionListener(e -> {
-                timeLeft -= SET_HINT_PENALTY;
-                int rand = (int) (Math.random() * SET_SIZE);
-                boolean cardNotFound = false;
-                int i = 0;
-                while(!cardNotFound) {
-                    if (!game.wasFound(game.getPossibleSets().get(i))) {
-                        hintBox.get(game.getBoard().indexOf(game.getPossibleSets().get(i).get(rand))).setVisible(true);
-                        cardNotFound = true;
-                        hint.setEnabled(false);
+                    timeLeft -= SET_HINT_PENALTY;
+                    int rand = (int) (Math.random() * SET_SIZE);
+                    boolean cardNotFound = false;
+                    int i = 0;
+                    while (!cardNotFound) {
+                        if (!game.wasFound(game.getPossibleSets().get(i))) {
+                            hintBoxes.get(game.getBoard().indexOf(game.getPossibleSets().get(i).get(rand))).setVisible(true);
+                            cardNotFound = true;
+                            hint.setEnabled(false);
+                        }
+                        i++;
                     }
-                    i++;
                 }
-            }
         );
     }
 
     public void newGame() {
         newGame.addActionListener(e -> {
-                if(JOptionPane.showConfirmDialog(null, "Are you sure you want to start a new game?", "Restart", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                    if(getContentPane().equals(gameOver)) {
-                        setContentPane(frame);
+                    if (JOptionPane.showConfirmDialog(null, "Are you sure you want to start a new game?", "Restart", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                        if (getContentPane().equals(gameOver)) {
+                            setContentPane(frame);
+                        }
+                        restart();
                     }
-                    restart();
                 }
-            }
         );
     }
 
     public void loadCards() {
-        for(int i = 0; i < game.getBoard().size(); i++) {
-            cards1[i] = new JButton(new ImageIcon(game.getFileNames().get(i)));
+        for (int i = 0; i < game.getBoard().size(); i++) {
+            boardCards[i] = new JButton(new ImageIcon(game.getFileNames().get(i)));
         }
-        for(JButton tempButton : cards1) {
+        for (JButton tempButton : boardCards) {
             if (buttonPosX > 544) {
                 buttonPosX = 32;
                 buttonPosY += 167;
@@ -278,59 +291,69 @@ public class SetCardGameView extends JFrame {
             buttonPosX += 256;
             JLabel selected = new JLabel(new ImageIcon(SetCardGameView.class.getResource("images/highlight.png")));
             JLabel hinted = new JLabel(new ImageIcon(SetCardGameView.class.getResource("images/hinted.png")));
+            JLabel isSetBorder = new JLabel(new ImageIcon(SetCardGameView.class.getResource("images/isset.png")));
+            JLabel isNotSetBorder = new JLabel(new ImageIcon(SetCardGameView.class.getResource("images/isnotset.png")));
             hinted.setBounds(tempButton.getX() - 5, tempButton.getY() - 5, 234, 145);
             selected.setBounds(tempButton.getX() - 5, tempButton.getY() - 5, 234, 145);
+            isSetBorder.setBounds(tempButton.getX() - 5, tempButton.getY() - 5, 234, 145);
+            isNotSetBorder.setBounds(tempButton.getX() - 5, tempButton.getY() - 5, 234, 145);
             frame.add(hinted);
             frame.add(selected);
+            frame.add(isSetBorder);
+            frame.add(isNotSetBorder);
             hinted.setVisible(false);
             selected.setVisible(false);
-            hintBox.add(hinted);
-            selectBox.add(selected);
+            isSetBorder.setVisible(false);
+            isNotSetBorder.setVisible(false);
+            hintBoxes.add(hinted);
+            selectBoxes.add(selected);
+            isSetBorderBoxes.add(isSetBorder);
+            isNotSetBorderBoxes.add(isNotSetBorder);
             tempButton.addActionListener(e -> {
-                    int cardIndex = Arrays.asList(cards1).indexOf(tempButton);
-                    if (!select.contains(game.getBoard().get(cardIndex))) {
-                        select.add(game.getBoard().get(cardIndex));
-                        hinted.setVisible(false);
-                        selected.setVisible(true);
-                        frame.revalidate();
-                        frame.repaint();
-                    } else {
-                        selected.setVisible(false);
-                        select.remove(game.getBoard().get(cardIndex));
-                        frame.revalidate();
-                        frame.repaint();
+                        int cardIndex = Arrays.asList(boardCards).indexOf(tempButton);
+                        if (!select.contains(game.getBoard().get(cardIndex))) {
+                            select.add(game.getBoard().get(cardIndex));
+                            hinted.setVisible(false);
+                            selected.setVisible(true);
+                            frame.revalidate();
+                            frame.repaint();
+                        } else {
+                            selected.setVisible(false);
+                            select.remove(game.getBoard().get(cardIndex));
+                            frame.revalidate();
+                            frame.repaint();
+                        }
+                        if (select.size() == SET_SIZE) {
+                            checkSet.setEnabled(true);
+                        }
+                        if (select.size() != SET_SIZE) {
+                            checkSet.setEnabled(false);
+                        }
                     }
-                    if (select.size() == SET_SIZE) {
-                        checkSet.setEnabled(true);
-                    }
-                    if (select.size() != SET_SIZE) {
-                        checkSet.setEnabled(false);
-                    }
-                }
             );
         }
     }
 
     public void helpDialog() {
         JOptionPane.showMessageDialog(null, "Welcome to Set! This is a card game where you are supposed\n" +
-                                            "to find a set. A set consists of three cards. Each card has\n" +
-                                            "4 properties: The number of shapes, the color, the type of\n" +
-                                            "shading, and the type of shape. There are 3 variations of\n" +
-                                            "each property. A set consists of three cards which, for\n" +
-                                            "each property, have either all of the same or all different.\n" +
-                                            "For example:\n" +
-                                            "          1 Red Striped Diamond\n" +
-                                            "          2 Red Solid Ovals\n" +
-                                            "          3 Red Open Squiggles\n" +
-                                            "would be a set. On the other hand,\n" +
-                                            "          1 Red Striped Diamond\n" +
-                                            "          1 Red Solid Oval\n" +
-                                            "          2 Red Open Squiggles\n" +
-                                            "would not be, because one of the cards has 2 shapes and\n" +
-                                            "the other two have 1. Also, for all pairs of cards, there\n" +
-                                            "is always one that makes a set with them. Think you got it?\n" +
-                                            "Try it out!", "How to Play", JOptionPane.CLOSED_OPTION);
-        if(getContentPane().equals(pause)) {
+                "to find a set. A set consists of three cards. Each card has\n" +
+                "4 properties: The number of shapes, the color, the type of\n" +
+                "shading, and the type of shape. There are 3 variations of\n" +
+                "each property. A set consists of three cards which, for\n" +
+                "each property, have either all of the same or all different.\n" +
+                "For example:\n" +
+                "          1 Red Striped Diamond\n" +
+                "          2 Red Solid Ovals\n" +
+                "          3 Red Open Squiggles\n" +
+                "would be a set. On the other hand,\n" +
+                "          1 Red Striped Diamond\n" +
+                "          1 Red Solid Oval\n" +
+                "          2 Red Open Squiggles\n" +
+                "would not be, because one of the cards has 2 shapes and\n" +
+                "the other two have 1. Also, for all pairs of cards, there\n" +
+                "is always one that makes a set with them. Think you got it?\n" +
+                "Try it out!", "How to Play", JOptionPane.CLOSED_OPTION);
+        if (getContentPane().equals(pause)) {
             setContentPane(frame);
         }
         frame.revalidate();
@@ -348,9 +371,11 @@ public class SetCardGameView extends JFrame {
 
     public void newBoard() {
         do {
-            cards1 = new JButton[game.getBoard().size()];
-            selectBox = new ArrayList<>();
-            hintBox = new ArrayList<>();
+            boardCards = new JButton[game.getBoard().size()];
+            selectBoxes = new ArrayList<>();
+            hintBoxes = new ArrayList<>();
+            isSetBorderBoxes = new ArrayList<>();
+            isNotSetBorderBoxes = new ArrayList<>();
             select = new ArrayList<>();
             buttonPosX = 32;
             buttonPosY = 20;
@@ -364,48 +389,64 @@ public class SetCardGameView extends JFrame {
             revalidate();
             repaint();
         }
-        while(setsExisting == NO_SETS_ON_BOARD);
+        while (!game.boardHasSets());
     }
 
     public void initTimer() {
         countDown = e -> {
-                timeLeft -= TIME_DECREMENT;
-                SimpleDateFormat df = new SimpleDateFormat("mm:ss");
-                time.setText(df.format(timeLeft));
-                if(timeLeft <= 0) {
-                    timer.stop();
-                    timeLeft = SET_TIME;
-                    setContentPane(gameOver);
-                    setLayout(null);
-                    gOver.setBounds(207, 300, 387, 100);
-                    gOver.setFont(gameOver.getFont().deriveFont(64f));
-                    gameOver.add(gOver);
-                    if(setsFound >= 0 && setsFound < 10) {
-                        yourScorePosX = 318;
-                        yourScoreSizeX = 166;
-                    }
-                    if(setsFound >= 10 && setsFound < 100) {
-                        yourScorePosX = 305;
-                        yourScoreSizeX = 191;
-                    }
-                    if(setsFound >= 100 && setsFound < 1000) {
-                        yourScorePosX = 293;
-                        yourScoreSizeX = 216;
-                    }
-                    if(setsFound >= 1000) {
-                        yourScorePosX = 280;
-                        yourScoreSizeX = 241;
-                    }
-                    yourScore.setBounds(yourScorePosX, 450, yourScoreSizeX, 100);
-                    yourScore.setText("Score: " + setsFound);
-                    yourScore.setFont(yourScore.getFont().deriveFont(36f));
-                    newGame.setBounds(336, 682, 130, 20);
-                    gameOver.add(newGame);
-                    gameOver.add(yourScore);
-                    gameOver.repaint();
-                    gameOver.revalidate();
-                }
+            timeLeft -= TIME_DECREMENT;
+            SimpleDateFormat df = new SimpleDateFormat("mm:ss");
+            if(timeLeft <= 10000) {
+                time.setForeground(Color.red);
             }
-        ;
+            time.setText(df.format(timeLeft));
+            if (timeLeft <= 0) {
+                timer.stop();
+                timeLeft = SET_TIME;
+                setContentPane(gameOver);
+                setLayout(null);
+                gOver.setBounds(207, 300, 387, 100);
+                gOver.setFont(gameOver.getFont().deriveFont(64f));
+                gameOver.add(gOver);
+                if (setsFound >= 0 && setsFound < 10) {
+                    yourScorePosX = 318;
+                    yourScorePosY = 166;
+                }
+                if (setsFound >= 10 && setsFound < 100) {
+                    yourScorePosX = 305;
+                    yourScorePosY = 191;
+                }
+                if (setsFound >= 100 && setsFound < 1000) {
+                    yourScorePosX = 293;
+                    yourScorePosY = 216;
+                }
+                if (setsFound >= 1000) {
+                    yourScorePosX = 280;
+                    yourScorePosY = 241;
+                }
+                yourScore.setBounds(yourScorePosX, 450, yourScorePosY, 100);
+                yourScore.setText("Score: " + setsFound);
+                yourScore.setFont(yourScore.getFont().deriveFont(36f));
+                newGame.setBounds(336, 682, 130, 20);
+                gameOver.add(newGame);
+                gameOver.add(yourScore);
+                gameOver.repaint();
+                gameOver.revalidate();
+            }
+        };
+    }
+
+    public ActionListener initBorderTimer(ArrayList<JLabel> borderBox) {
+        showBorder = e -> {
+            borderTimeLeft -= TIME_DECREMENT;
+            if (borderTimeLeft <= 0) {
+                for (int j = 0; j < borderBox.size(); j++) {
+                    borderBox.get(j).setVisible(false);
+                }
+                borderTimer.stop();
+                borderTimeLeft = BORDER_TIME;
+            }
+        };
+        return showBorder;
     }
 }

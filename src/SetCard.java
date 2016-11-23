@@ -1,5 +1,6 @@
 /**
  * A card contains a number, a color, a shade, and a shape
+ *
  * @author Connor Wong
  */
 
@@ -37,7 +38,7 @@ public class SetCard {
         SQUIGGLE,
         OVAL
     }
-    
+
     public SetCard(Number num, Color col, Shade shading, Shape form) {
         number = num;
         color = col;

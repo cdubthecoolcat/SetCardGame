@@ -5,10 +5,12 @@ import java.lang.Math;
 
 /**
  * The main logic of set
+ *
  * @author Connor Wong
  */
 public class SetCardGameModel {
     private boolean isSet;
+    private boolean hasSets;
     private ArrayList<Integer> randomList;
     private ArrayList<SetCard> board;
     private ArrayList<ArrayList<SetCard>> setsFound;
@@ -39,7 +41,7 @@ public class SetCardGameModel {
         makeNumberList();
         setBoard();
         createFileNames();
-        boardHasSet();
+        findPossibleSets();
     }
 
     public void init() {
@@ -49,20 +51,22 @@ public class SetCardGameModel {
         possibleSets = new ArrayList<>();
         count = 0;
     }
-    
+
     public ArrayList<SetCard> getBoard() {
         return board;
     }
+
     public int getCount() {
         return count;
     }
+
     public ArrayList<URL> getFileNames() {
         return fileNames;
     }
 
     public void makeNumberList() {
         randomList = new ArrayList<>();
-        for(int i = 0; i < DECK_SIZE; i++) {
+        for (int i = 0; i < DECK_SIZE; i++) {
             randomList.add(i);
         }
     }
@@ -83,6 +87,7 @@ public class SetCardGameModel {
         return select.get(0).getNumber() == select.get(1).getNumber()
                 && select.get(0).getNumber() == select.get(2).getNumber();
     }
+
     //check if all cards have all different number shapes
     public boolean areDifferentNumbers(ArrayList<SetCard> select) {
         boolean first = select.get(0).getNumber() != select.get(1).getNumber();
@@ -90,11 +95,13 @@ public class SetCardGameModel {
         boolean third = select.get(0).getNumber() != select.get(2).getNumber();
         return first && second && third;
     }
+
     //check if all cards are the same shape
     public boolean isSameShape(ArrayList<SetCard> select) {
         return select.get(0).getShape() == select.get(1).getShape()
                 && select.get(0).getShape() == select.get(2).getShape();
     }
+
     //check if all cards have all different shapes
     public boolean areDifferentShapes(ArrayList<SetCard> select) {
         boolean first = select.get(0).getShape() != select.get(1).getShape();
@@ -102,11 +109,13 @@ public class SetCardGameModel {
         boolean third = select.get(0).getShape() != select.get(2).getShape();
         return first && second && third;
     }
+
     //check if all cards have the same shading
     public boolean isSameShading(ArrayList<SetCard> select) {
         return select.get(0).getShade() == select.get(1).getShade()
                 && select.get(0).getShade() == select.get(2).getShade();
     }
+
     //check if all cards have different shading
     public boolean areDifferentShading(ArrayList<SetCard> select) {
         boolean first = select.get(0).getShade() != select.get(1).getShade();
@@ -114,11 +123,13 @@ public class SetCardGameModel {
         boolean third = select.get(0).getShade() != select.get(2).getShade();
         return first && second && third;
     }
+
     //check if all cards have same color
     public boolean isSameColor(ArrayList<SetCard> select) {
         return select.get(0).getColor() == select.get(1).getColor()
                 && select.get(0).getColor() == select.get(2).getColor();
     }
+
     //check if all cards have different color
     public boolean areDifferentColors(ArrayList<SetCard> select) {
         boolean first = select.get(0).getColor() != select.get(1).getColor();
@@ -129,7 +140,7 @@ public class SetCardGameModel {
 
     //checks if selected cards form a set
     public boolean isSet(ArrayList<SetCard> select) {
-        if(select.size() != SET_SIZE) {
+        if (select.size() != SET_SIZE) {
             return false;
         }
         boolean isNumbers = isSameNumber(select) || areDifferentNumbers(select);
@@ -140,73 +151,69 @@ public class SetCardGameModel {
         return isSet;
     }
 
-    public boolean boardHasSet() {
-        boolean hasSet = false;
+    public void findPossibleSets() {
         int BOARD_SIZE = board.size();
-        for(int i = 0; i < BOARD_SIZE; i++) {
-            for(int j = i + 1; j < BOARD_SIZE; j++) {
-                for(int k = j + 1; k < BOARD_SIZE; k++) {
+        hasSets = false;
+        for (int i = 0; i < BOARD_SIZE; i++) {
+            for (int j = i + 1; j < BOARD_SIZE; j++) {
+                for (int k = j + 1; k < BOARD_SIZE; k++) {
                     ArrayList<SetCard> test = new ArrayList<>();
                     test.add(board.get(i));
                     test.add(board.get(j));
                     test.add(board.get(k));
-                    if(isSet(test)) {
+                    if (isSet(test)) {
                         possibleSets.add(test);
-                        hasSet = true;
+                        hasSets = true;
                         count++;
                     }
                 }
             }
         }
-        return hasSet;
+    }
+
+    public boolean boardHasSets() {
+        return hasSets;
     }
 
     public void createFileNames() {
         SetCard tempCard;
         String tempFileName;
         fileNames = new ArrayList<>();
-        for(int i = 0; i < board.size(); i++) {
+        for (int i = 0; i < board.size(); i++) {
             tempCard = board.get(i);
             tempFileName = "";
-            if(tempCard.getNumber() == SetCard.Number.ONE) {
+            if (tempCard.getNumber() == SetCard.Number.ONE) {
                 tempFileName += NUM_IMAGE_ONE;
-            }
-            else if(tempCard.getNumber() == SetCard.Number.TWO) {
+            } else if (tempCard.getNumber() == SetCard.Number.TWO) {
                 tempFileName += NUM_IMAGE_TWO;
-            }
-            else {
+            } else {
                 tempFileName += NUM_IMAGE_THREE;
             }
-            if(tempCard.getColor() == SetCard.Color.GREEN) {
+            if (tempCard.getColor() == SetCard.Color.GREEN) {
                 tempFileName += COL_IMAGE_GREEN;
-            }
-            else if(tempCard.getColor() == SetCard.Color.PURPLE) {
+            } else if (tempCard.getColor() == SetCard.Color.PURPLE) {
                 tempFileName += COL_IMAGE_PURPLE;
-            }
-            else {
+            } else {
                 tempFileName += COL_IMAGE_RED;
             }
-            if(tempCard.getShade() == SetCard.Shade.OPEN) {
+            if (tempCard.getShade() == SetCard.Shade.OPEN) {
                 tempFileName += SHADE_IMAGE_OPEN;
-            }
-            else if(tempCard.getShade() == SetCard.Shade.SOLID) {
+            } else if (tempCard.getShade() == SetCard.Shade.SOLID) {
                 tempFileName += SHADE_IMAGE_SOLID;
-            }
-            else {
+            } else {
                 tempFileName += SHADE_IMAGE_STRIPED;
             }
-            if(tempCard.getShape() == SetCard.Shape.DIAMOND) {
+            if (tempCard.getShape() == SetCard.Shape.DIAMOND) {
                 tempFileName += SHAPE_IMAGE_DIAMOND;
-            }
-            else if(tempCard.getShape() == SetCard.Shape.OVAL) {
+            } else if (tempCard.getShape() == SetCard.Shape.OVAL) {
                 tempFileName += SHAPE_IMAGE_OVAL;
-            }
-            else {
+            } else {
                 tempFileName += SHAPE_IMAGE_SQUIGGLE;
             }
             fileNames.add(SetCardGameModel.class.getResource(tempFileName));
         }
     }
+
     public void updateSetsFound(ArrayList<SetCard> currentSet) {
         setsFound.add(currentSet);
     }
@@ -217,8 +224,8 @@ public class SetCardGameModel {
 
     public boolean wasFound(ArrayList<SetCard> currentSet) {
         boolean wasFound = false;
-        for(int i = 0; i < setsFound.size(); i++) {
-            if(setsFound.get(i).contains(currentSet.get(0)) && setsFound.get(i).contains(currentSet.get(1))
+        for (int i = 0; i < setsFound.size(); i++) {
+            if (setsFound.get(i).contains(currentSet.get(0)) && setsFound.get(i).contains(currentSet.get(1))
                     && setsFound.get(i).contains(currentSet.get(2))) {
                 wasFound = true;
             }
@@ -236,6 +243,6 @@ public class SetCardGameModel {
         makeNumberList();
         setBoard();
         createFileNames();
-        boardHasSet();
+        findPossibleSets();
     }
 }
