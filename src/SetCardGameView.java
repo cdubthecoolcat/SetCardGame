@@ -363,6 +363,7 @@ public class SetCardGameView extends JFrame {
     public void restart() {
         timeLeft = SET_TIME;
         setsFound = 0;
+        time.setForeground(Color.darkGray);
         found.setText("Sets Found: " + setsFound);
         frame.setLayout(null);
         newBoard();
