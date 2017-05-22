@@ -323,12 +323,7 @@ public class SetCardGameView extends JFrame {
                             frame.revalidate();
                             frame.repaint();
                         }
-                        if (select.size() == SET_SIZE) {
-                            checkSet.setEnabled(true);
-                        }
-                        if (select.size() != SET_SIZE) {
-                            checkSet.setEnabled(false);
-                        }
+                        checkSet.setEnabled(select.size() == SET_SIZE);
                     }
             );
         }
